@@ -103,7 +103,7 @@ typedef struct {
  * @param[out] buf Content of loaded file
  * @param[out] len Size of content(file)
  */
-typedef void (*file_reader_callback)(void *ctx, const char *filename, int is_mtl, const char *obj_filename, char **buf, size_t *len);
+typedef void (*file_reader_callback)(void *ctx1, void* ctx2, const char *filename, int is_mtl, const char *obj_filename, char **buf, size_t *len);
 
 /* Parse wavefront .obj
  * @param[out] attrib Attibutes
@@ -122,7 +122,7 @@ typedef void (*file_reader_callback)(void *ctx, const char *filename, int is_mtl
 extern int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
                              size_t *num_shapes, tinyobj_material_t **materials,
                              size_t *num_materials, const char *file_name, file_reader_callback file_reader,
-                             void *ctx, unsigned int flags);
+                             void *ctx1, void* ctx2, unsigned int flags);
 
 /* Parse wavefront .mtl
  *
@@ -139,7 +139,7 @@ extern int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 extern int tinyobj_parse_mtl_file(tinyobj_material_t **materials_out,
                                   size_t *num_materials_out,
                                   const char *filename, const char *obj_filename, file_reader_callback file_reader,
-				  void *ctx);
+				  void *ctx1, void* ctx2 );
 
 extern void tinyobj_attrib_init(tinyobj_attrib_t *attrib);
 extern void tinyobj_attrib_free(tinyobj_attrib_t *attrib);
@@ -834,7 +834,7 @@ static int get_line_infos(const char *buf, size_t buf_len, LineInfo **line_infos
 
 static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
                                             size_t *num_materials_out,
-                                            const char *mtl_filename, const char *obj_filename, file_reader_callback file_reader, void *ctx,
+                                            const char *mtl_filename, const char *obj_filename, file_reader_callback file_reader, void *ctx1, void* ctx2,
                                             hash_table_t* material_table) {
   tinyobj_material_t material;
   size_t num_materials = 0;
@@ -858,7 +858,7 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
   (*materials_out) = NULL;
   (*num_materials_out) = 0;
 
-  file_reader(ctx, mtl_filename, 1, obj_filename, &buf, &len);
+  file_reader(ctx1, ctx2, mtl_filename, 1, obj_filename, &buf, &len);
   if (len < 1) return TINYOBJ_ERROR_INVALID_PARAMETER;
   if (buf == NULL) return TINYOBJ_ERROR_INVALID_PARAMETER;
 
@@ -1088,8 +1088,8 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
 int tinyobj_parse_mtl_file(tinyobj_material_t **materials_out,
                            size_t *num_materials_out,
                            const char *mtl_filename, const char *obj_filename, file_reader_callback file_reader,
-                           void *ctx) {
-  return tinyobj_parse_and_index_mtl_file(materials_out, num_materials_out, mtl_filename, obj_filename, file_reader, ctx, NULL);
+                           void *ctx1, void* ctx2) {
+  return tinyobj_parse_and_index_mtl_file(materials_out, num_materials_out, mtl_filename, obj_filename, file_reader, ctx1, ctx2, NULL);
 }
 
 
@@ -1372,7 +1372,7 @@ static char *generate_mtl_filename(const char *obj_filename,
 int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
                       size_t *num_shapes, tinyobj_material_t **materials_out,
                       size_t *num_materials_out, const char *obj_filename,
-                      file_reader_callback file_reader, void *ctx,
+                      file_reader_callback file_reader, void *ctx1, void* ctx2,
                       unsigned int flags) {
   LineInfo *line_infos = NULL;
   Command *commands = NULL;
@@ -1393,7 +1393,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
   char *buf = NULL;
   size_t len = 0;
-  file_reader(ctx, obj_filename, /* is_mtl */0, obj_filename, &buf, &len);
+  file_reader(ctx1, ctx2, obj_filename, /* is_mtl */0, obj_filename, &buf, &len);
 
   if (len < 1) return TINYOBJ_ERROR_INVALID_PARAMETER;
   if (attrib == NULL) return TINYOBJ_ERROR_INVALID_PARAMETER;
@@ -1467,7 +1467,7 @@ int tinyobj_parse_obj(tinyobj_attrib_t *attrib, tinyobj_shape_t **shapes,
 
     ret = tinyobj_parse_and_index_mtl_file(&materials, &num_materials,
                                            mtl_filename, obj_filename,
-                                           file_reader, ctx,
+                                           file_reader, ctx1, ctx2,
                                            &material_table);
 
     if (ret != TINYOBJ_SUCCESS) {
