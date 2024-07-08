@@ -47,6 +47,9 @@ typedef struct {
 
   int pad0;
 
+  float roughness;
+  float metallic;
+
   char *ambient_texname;            /* map_Ka */
   char *diffuse_texname;            /* map_Kd */
   char *specular_texname;           /* map_Ks */
@@ -999,12 +1002,25 @@ static int tinyobj_parse_and_index_mtl_file(tinyobj_material_t **materials_out,
       continue;
     }
 
+    /* pbr rouhgness */
+    if (0 == strncmp(token, "Pr", 2) && IS_SPACE(token[2])) {
+      token += 2;
+      material.roughness = parseFloat(&token);
+    }
+
+    /* pbr metallic */
+    if (0 == strncmp(token, "Pm", 2 ) && IS_SPACE(token[2])) {
+      token += 2;
+      material.metallic = parseFloat(&token);
+    }
+
     /* dissolve */
     if ((token[0] == 'd' && IS_SPACE(token[1]))) {
       token += 1;
       material.dissolve = parseFloat(&token);
       continue;
     }
+
     if (token[0] == 'T' && token[1] == 'r' && IS_SPACE(token[2])) {
       token += 2;
       /* Invert value of Tr(assume Tr is in range [0, 1]) */
